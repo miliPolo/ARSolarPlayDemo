@@ -12,7 +12,7 @@
 //ARKit框架
 #import <ARKit/ARKit.h>
 
-@interface SCNViewController ()<ARSCNViewDelegate>
+@interface SCNViewController ()<ARSCNViewDelegate,ARSessionDelegate>
 //AR视图：展示3D界面
 @property (nonatomic, strong)ARSCNView *arSCNView;
 
@@ -70,7 +70,11 @@
     _moonNode.position = SCNVector3Make(0.3, 0, 0);
     [_earthGroupNode addChildNode:_earthNode];
     
+<<<<<<< HEAD
     _earthGroupNode.position = SCNVector3Make(0.6, -0.2, -1);
+=======
+    _earthGroupNode.position = SCNVector3Make(1, 0, 0);
+>>>>>>> originDemo/master
     
     [_sunNode setPosition:SCNVector3Make(0, -0.2, -1)];
     [self.arSCNView.scene.rootNode addChildNode:_sunNode];
@@ -106,8 +110,13 @@
     
 }
 
+<<<<<<< HEAD
 - (void)roationNode
 {
+=======
+-(void)roationNode{
+    
+>>>>>>> originDemo/master
     [_earthNode runAction:[SCNAction repeatActionForever:[SCNAction rotateByX:0 y:2 z:0 duration:1]]];   //地球自转
     
     // Rotate the moon
@@ -149,8 +158,13 @@
     [self addAnimationToSun];
 }
 
+<<<<<<< HEAD
 - (void)addAnimationToSun
 {
+=======
+-(void)addAnimationToSun{
+    
+>>>>>>> originDemo/master
     // Achieve a lava effect by animating textures
     CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"contentsTransform"];
     animation.duration = 10.0;
@@ -167,8 +181,13 @@
     [_sunNode.geometry.firstMaterial.multiply addAnimation:animation forKey:@"sun-texture2"];
 }
 
+<<<<<<< HEAD
 - (void)mathRoation
 {
+=======
+-(void)mathRoation{
+    
+>>>>>>> originDemo/master
     // 相关数学知识点： 任意点a(x,y)，绕一个坐标点b(rx0,ry0)逆时针旋转a角度后的新的坐标设为c(x0, y0)，有公式：
     
     //    x0= (x - rx0)*cos(a) - (y - ry0)*sin(a) + rx0 ;
@@ -276,6 +295,7 @@
         return _arSession;
     }
     _arSession = [[ARSession alloc] init];
+    _arSession.delegate = self;
     return _arSession;
 }
 
@@ -287,8 +307,19 @@
     _arSCNView = [[ARSCNView alloc] initWithFrame:self.view.bounds];
     _arSCNView.session = self.arSession;
     _arSCNView.automaticallyUpdatesLighting = YES;
+    _arSCNView.delegate = self;
     
     return _arSCNView;
+}
+
+#pragma mark -ARSessionDelegate
+//会话位置更新
+- (void)session:(ARSession *)session didUpdateFrame:(ARFrame *)frame
+{
+    //监听手机的移动，实现近距离查看太阳系细节，为了凸显效果变化值*3
+    [_sunNode setPosition:SCNVector3Make(-3 * frame.camera.transform.columns[3].x, -0.1 - 3 * frame.camera.transform.columns[3].y, -2 - 3 * frame.camera.transform.columns[3].z)];
+    
+    
 }
 
 @end
