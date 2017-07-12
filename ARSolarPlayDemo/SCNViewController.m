@@ -12,7 +12,7 @@
 //ARKit框架
 #import <ARKit/ARKit.h>
 
-@interface SCNViewController ()<ARSCNViewDelegate>
+@interface SCNViewController ()<ARSCNViewDelegate,ARSessionDelegate>
 //AR视图：展示3D界面
 @property (nonatomic, strong)ARSCNView *arSCNView;
 
@@ -57,16 +57,16 @@
     _moonNode = [SCNNode new];
     _earthGroupNode = [SCNNode new];
     
-    _sunNode.geometry = [SCNSphere sphereWithRadius:2.5];
-    _earthNode.geometry = [SCNSphere sphereWithRadius:1.0];
-    _moonNode.geometry = [SCNSphere sphereWithRadius:0.5];
+    _sunNode.geometry = [SCNSphere sphereWithRadius:0.25];
+    _earthNode.geometry = [SCNSphere sphereWithRadius:0.1];
+    _moonNode.geometry = [SCNSphere sphereWithRadius:0.05];
     
-    _moonNode.position = SCNVector3Make(3, 0, 0);
+    _moonNode.position = SCNVector3Make(0.3, 0, 0);
     [_earthGroupNode addChildNode:_earthNode];
     
-    _earthGroupNode.position = SCNVector3Make(10, 0, 0);
+    _earthGroupNode.position = SCNVector3Make(1, 0, 0);
     
-    [_sunNode setPosition:SCNVector3Make(0, 5, -20)];
+    [_sunNode setPosition:SCNVector3Make(0, -0.1, -2)];
     [self.arSCNView.scene.rootNode addChildNode:_sunNode];
     
     // 地球贴图
@@ -94,12 +94,12 @@
     _earthNode.geometry.firstMaterial.specular.intensity = 0.5;
     _moonNode.geometry.firstMaterial.specular.contents = [UIColor grayColor];
     
-    
     [self roationNode];
     [self addOtherNode];
     [self addLight];
     
 }
+
 -(void)roationNode{
     
     [_earthNode runAction:[SCNAction repeatActionForever:[SCNAction rotateByX:0 y:2 z:0 duration:1]]];   //地球自转
@@ -119,14 +119,14 @@
     
     // Rotate the moon around the Earth
     CABasicAnimation *moonRotationAnimation = [CABasicAnimation animationWithKeyPath:@"rotation"];
-    moonRotationAnimation.duration = 5.0;
+    moonRotationAnimation.duration = 15.0;
     moonRotationAnimation.toValue = [NSValue valueWithSCNVector4:SCNVector4Make(0, 1, 0, M_PI * 2)];
     moonRotationAnimation.repeatCount = FLT_MAX;
     [moonRotationNode addAnimation:animation forKey:@"moon rotation around earth"];
     
     [_earthGroupNode addChildNode:moonRotationNode];
     
-        
+    
     // Earth-rotation (center of rotation of the Earth around the Sun)
     SCNNode *earthRotationNode = [SCNNode node];
     [_sunNode addChildNode:earthRotationNode];
@@ -136,14 +136,14 @@
     
     // Rotate the Earth around the Sun
     animation = [CABasicAnimation animationWithKeyPath:@"rotation"];
-    animation.duration = 10.0;
+    animation.duration = 30.0;
     animation.toValue = [NSValue valueWithSCNVector4:SCNVector4Make(0, 1, 0, M_PI * 2)];
     animation.repeatCount = FLT_MAX;
     [earthRotationNode addAnimation:animation forKey:@"earth rotation around sun"];
-        
     
     [self addAnimationToSun];
 }
+
 -(void)addAnimationToSun{
     
     // Achieve a lava effect by animating textures
@@ -162,6 +162,7 @@
     [_sunNode.geometry.firstMaterial.multiply addAnimation:animation forKey:@"sun-texture2"];
     
 }
+
 -(void)mathRoation{
     
     // 相关数学知识点： 任意点a(x,y)，绕一个坐标点b(rx0,ry0)逆时针旋转a角度后的新的坐标设为c(x0, y0)，有公式：
@@ -215,14 +216,13 @@
     [_sunNode addChildNode:lightNode];
     
     // Configure attenuation distances because we don't want to light the floor
-    lightNode.light.attenuationEndDistance = 20.0;
-    lightNode.light.attenuationStartDistance = 19.5;
+    lightNode.light.attenuationEndDistance = 19;
+    lightNode.light.attenuationStartDistance = 21;
     
     // Animation
     [SCNTransaction begin];
     [SCNTransaction setAnimationDuration:1];
     {
-        
         lightNode.light.color = [UIColor whiteColor]; // switch on
         //[presentationViewController updateLightingWithIntensities:@[@0.0]]; //switch off all the other lights
         _sunHaloNode.opacity = 0.5; // make the halo stronger
@@ -230,11 +230,11 @@
     [SCNTransaction commit];
     
 }
--(void)addOtherNode{
+
+- (void)addOtherNode{
     
     SCNNode *cloudsNode = [SCNNode node];
-    cloudsNode.geometry = [SCNSphere sphereWithRadius:1.15];
-    
+    cloudsNode.geometry = [SCNSphere sphereWithRadius:0.11];
     [_earthNode addChildNode:cloudsNode];
     
     cloudsNode.opacity = 0.5;
@@ -244,7 +244,7 @@
     
     // Add a halo to the Sun (a simple textured plane that does not write to depth)
     _sunHaloNode = [SCNNode node];
-    _sunHaloNode.geometry = [SCNPlane planeWithWidth:25 height:25];
+    _sunHaloNode.geometry = [SCNPlane planeWithWidth:2.5 height:2.5];
     _sunHaloNode.rotation = SCNVector4Make(1, 0, 0, 0 * M_PI / 180.0);
     _sunHaloNode.geometry.firstMaterial.diffuse.contents = @"art.scnassets/earth/sun-halo.png";
     _sunHaloNode.geometry.firstMaterial.lightingModelName = SCNLightingModelConstant; // no lighting
@@ -252,11 +252,10 @@
     _sunHaloNode.opacity = 0.2;
     [_sunNode addChildNode:_sunHaloNode];
     
-    
     // Add a textured plane to represent Earth's orbit
     SCNNode *earthOrbit = [SCNNode node];
     earthOrbit.opacity = 0.4;
-    earthOrbit.geometry = [SCNPlane planeWithWidth:21 height:21];
+    earthOrbit.geometry = [SCNPlane planeWithWidth:2.1 height:2.1];
     earthOrbit.geometry.firstMaterial.diffuse.contents = @"art.scnassets/earth/orbit.png";
     earthOrbit.geometry.firstMaterial.diffuse.mipFilter = SCNFilterModeLinear;
     earthOrbit.rotation = SCNVector4Make(1, 0, 0, M_PI_2);
@@ -277,9 +276,7 @@
     _arSessionConfiguration = configuration;
     //3.自适应灯光（相机从暗到强光快速过渡效果会平缓一些）
     _arSessionConfiguration.lightEstimationEnabled = YES;
-    
     return _arSessionConfiguration;
-    
 }
 
 - (ARSession *)arSession
@@ -289,9 +286,9 @@
         return _arSession;
     }
     _arSession = [[ARSession alloc] init];
+    _arSession.delegate = self;
     return _arSession;
 }
-
 
 - (ARSCNView *)arSCNView
 {
@@ -301,6 +298,7 @@
     _arSCNView = [[ARSCNView alloc] initWithFrame:self.view.bounds];
     _arSCNView.session = self.arSession;
     _arSCNView.automaticallyUpdatesLighting = YES;
+    _arSCNView.delegate = self;
     
     //初始化节点
     [self initNode];
@@ -308,17 +306,16 @@
     return _arSCNView;
 }
 
-- (void)session:(ARSession *)session didUpdateFrame:(ARFrame *)frame {
+#pragma mark -ARSessionDelegate
+//会话位置更新
+- (void)session:(ARSession *)session didUpdateFrame:(ARFrame *)frame
+{
+    //监听手机的移动，实现近距离查看太阳系细节，为了凸显效果变化值*3
+    [_sunNode setPosition:SCNVector3Make(-3 * frame.camera.transform.columns[3].x, -0.1 - 3 * frame.camera.transform.columns[3].y, -2 - 3 * frame.camera.transform.columns[3].z)];
+    
     
 }
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
 
 @end
+
+
